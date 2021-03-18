@@ -2,7 +2,7 @@ from flask import Flask
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_http_response import success, result, error
+from flask_http_response import success
 
 import json
 import requests
@@ -42,11 +42,18 @@ def auth_path_1():
 def auth_path_2():
     return success.return_response(message='successfully completed request to auth path 2', status=200)
 
-@app.route('/auth-path-3')
+@app.route('/auth-path-3', methods=['GET'])
 def auth_path_3():
-    response = requests.get('http://127.0.0.1:3000/service-path-3').content
-    print(response)
-    return response
+    url = "http://34.121.67.167/pets-service/service-path-3"
+
+    payload = {}
+    headers = {
+        'Host': 'app.pets'
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    return response.text
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

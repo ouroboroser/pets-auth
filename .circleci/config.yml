@@ -1,0 +1,50 @@
+version: 2.1
+orbs:
+  node: circleci/node@1.1.6
+  gcr: circleci/gcp-gcr@0.6.1
+  gcp-gke: circleci/gcp-gke@0.2.0
+jobs:
+  build-image:
+    machine: true
+    steps:
+      - checkout
+      - gcr/gcr-auth
+      - gcr/build-image:
+          image: pets-auth-${CIRCLE_BRANCH}
+          tag: "build-${CIRCLE_BRANCH}-${CIRCLE_SHA1}"
+          registry-url: eu.gcr.io
+      - gcr/push-image:
+          image: pets-auth-${CIRCLE_BRANCH}
+          tag: "build-${CIRCLE_BRANCH}-${CIRCLE_SHA1}"
+          registry-url: eu.gcr.io
+  deploy:
+    machine: true
+    steps:
+      - checkout
+      - gcp-gke/install
+      - gcp-gke/init
+      - run:
+          name: Configure k8s env
+          command: |-
+            case "$CIRCLE_BRANCH" in
+            main) echo "DEPLOYMENT_NAME=$K8S_DEPLOYMENT_NAME_PROD" >>$BASH_ENV ;;
+            *) echo "Not handled branch" exit 1 ;;
+            esac
+      - gcp-gke/rollout-image:
+          cluster: pets
+          deployment: $DEPLOYMENT_NAME
+          container: $DEPLOYMENT_NAME_APP
+          image: "eu.gcr.io/${GOOGLE_PROJECT_ID}/pets-auth-${CIRCLE_BRANCH}:build-${CIRCLE_BRANCH}-${CIRCLE_SHA1}"
+
+workflows:
+  build-deploy-prod:
+    jobs:
+      - build-image:
+          filters:
+            branches:
+              only:
+                - main
+                - dev
+      - deploy:
+          requires:
+            - build-image
