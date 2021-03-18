@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pets-auth
+spec:
+  replicas: 3
+  selector: 
+    matchLabels: 
+      app: pets-auth-app
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template: 
+    metadata:
+      labels:
+        app: pets-auth-app
+    spec:
+      containers:
+      - name: pets-auth-app
+        image: gcr.io/pet-project-306014/auth_service@sha256:30d944e6d02e19e07af1b43374bf203e219c02123f66d0767b8ac9dcbabeade5
+        ports:
+          - containerPort: 80
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP

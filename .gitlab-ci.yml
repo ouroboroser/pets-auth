@@ -1,0 +1,15 @@
+<<<<<<< HEAD
+=======
+docker_image:
+  image: 'docker:latest'
+  stage: docker_image
+variables:
+  DOCKER_IMAGE_TAG: "${CI_PIPELINE_ID}"
+ script:
+   — docker build --cache-from "${DOCKER_IMAGE_TAG}" -t "${DOCKER_IMAGE_TAG}" .
+   — echo "$SERVICE_ACCOUNT_KEY" > key.json
+   — docker login -u _json_key --password-stdin https://eu.gcr.io < key.json
+   — docker push ${DOCKER_IMAGE_TAG}
+ only:
+   — master
+>>>>>>> 1f1774b... feat(ci/cd): add auto deploy
