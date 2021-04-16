@@ -1,12 +1,12 @@
 import pika
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='my-release-rabbitmq'))
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
 channel = connection.channel()
 
 channel.exchange_declare(exchange='logs', exchange_type='fanout')
 
-result = channel.queue_declare(queue='', exclusive=True)
-queue_name = result.method.queue
+queue_name = "my queue"
+channel.queue_declare(queue=queue_name, exclusive=True)
 
 channel.queue_bind(exchange='logs', queue=queue_name)
 

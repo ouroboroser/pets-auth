@@ -3,7 +3,8 @@ from flask import request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_http_response import success
-
+import pika
+import sys
 import json
 import requests
 
@@ -54,6 +55,39 @@ def auth_path_3():
     response = requests.request("GET", url, headers=headers, data=payload)
 
     return response.text
+
+@app.route('/send', methods=['POST'])
+def send():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='my-release-rabbitmq'))
+    channel = connection.channel()
+    channel.exchange_declare(exchange='logs', exchange_type='fanout')
+    message = ' '.join(sys.argv[1:]) or "info: Hello World!"
+    channel.basic_publish(exchange='logs', routing_key='', body=message)
+    print(" [x] Sent %r" % message)
+    connection.close()
+    return {message: "success"}
+
+@app.route('/receive', methods=['GET'])
+def receive():
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='my-release-rabbitmq'))
+    channel = connection.channel()
+
+    channel.exchange_declare(exchange='logs', exchange_type='fanout')
+    queue_name = "my queue"
+    channel.queue_declare(queue=queue_name, exclusive=True)
+
+    channel.queue_bind(exchange='logs', queue=queue_name)
+
+    print(' [*] Waiting for logs. To exit press CTRL+C')
+
+    def callback(ch, method, properties, body):
+        print(" [x] %r" % body)
+
+    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+    channel.start_consuming()
+    return {"status": "success"}
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
