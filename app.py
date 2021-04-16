@@ -58,7 +58,7 @@ def auth_path_3():
 
 @app.route('/send', methods=['POST'])
 def send():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='my-release-rabbitmq'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='pets:pets@my-release-rabbitmq'))
     channel = connection.channel()
     channel.exchange_declare(exchange='logs', exchange_type='fanout')
     message = ' '.join(sys.argv[1:]) or "info: Hello World!"
@@ -69,7 +69,7 @@ def send():
 
 @app.route('/receive', methods=['GET'])
 def receive():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='my-release-rabbitmq'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='pets:pets@my-release-rabbitmq'))
     channel = connection.channel()
 
     channel.exchange_declare(exchange='logs', exchange_type='fanout')
